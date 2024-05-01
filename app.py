@@ -11,6 +11,7 @@ df = pd.read_csv('data/T-20 World cup 2022.csv').set_index('match_id').drop(colu
 
 # Initialize the app
 app = Dash(__name__)
+server = app.server
 
 # App layout
 app.layout = html.Div([
