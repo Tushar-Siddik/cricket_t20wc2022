@@ -159,16 +159,35 @@ class Cricket:
         
     
     def team_run_timeline(self, team):
-        """timeline of individual team's run sequentilly.
+        """match by match timeline of individual team's run sequentilly.
 
         Returns:
-            DataFrame: individual team's run in a sequence
+            DataFrame: Match by match individual team's run in a sequence
         """
         
         df1 = self.team_run().copy().reset_index()
         
         # df['Opposition'] = df['match_name'].apply(lambda x: x[:4])       
         return df1[df1['Team'] == team.upper()].sort_values(by = 'match_id')
+    
+    
+    def team_run_timeline_over(self, match, team):
+        """Over by over timeline of individual team's run sequentilly.
+
+        Returns:
+            DataFrame: Over by over individual team's run in a sequence
+        """
+        
+        df = self.df.copy()
+        df['wkt_text'] = df['wkt_text'].notna()
+        
+        df1 = (df.pivot_table(index = ['match_name', 'current_innings', 'over'], values= ['runs', 'wkt_text'], aggfunc = 'sum').sort_index().reset_index()
+                .rename({'match_name' : 'Match', 'current_innings' : 'Innings', 'over' : 'Over', 'runs' : 'Run', 'wkt_text' : 'Wicket'}, axis = 1))
+      
+        df1 = df1[(df1['Match'] == match) & (df1['Innings'] == team.upper())]
+        df1['Total'] = df1['Run'].cumsum()
+        
+        return df1
         
     
     def most_winning_team(self):
@@ -1488,11 +1507,3 @@ class Cricket:
                 .rename({'match_name': 'Match', 'batsman1_name' : 'Batsman', 'runs' : 'Runs'}, axis = 1)
                 .sort_values(by = 'Strk Rate', ascending = False)
                 )
-
-# df = pd.read_csv("T-20 World cup 2022.csv").set_index('match_id').drop(columns = ['comment_id', 'home_team', 'away_team'])
-
-# all = Cricket(df, 'all')
-# group = Cricket(df, 'group')
-# super_12 = Cricket(df, 'super 12')
-# semi = Cricket(df, 'semi')
-# final = Cricket(df, 'final')
