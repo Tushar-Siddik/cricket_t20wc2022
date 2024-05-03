@@ -2,6 +2,7 @@
 from dash import Dash, html, dash_table, dcc, callback, Output, Input
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 from cricket import Cricket
 # from cricket import all, group, super_12, semi, final
@@ -13,67 +14,179 @@ df = pd.read_csv('data/T-20 World cup 2022.csv').set_index('match_id').drop(colu
 app = Dash(__name__)
 server = app.server
 
+
+all_matches = {
+    'AFG v ENG': ['AFG', 'ENG'],
+    'AFG v SL': ['AFG', 'SL'],
+    'AUS v AFG': ['AUS', 'AFG'],
+    'AUS v IRE': ['AUS', 'IRE'],
+    'AUS v NZ': ['AUS', 'NZ'],
+    'AUS v SL': ['AUS', 'SL'],
+    'BAN v INDIA': ['BAN', 'INDIA'],
+    'BAN v NED': ['BAN', 'NED'],
+    'BAN v PAK': ['BAN', 'PAK'],
+    'BAN v SA': ['BAN', 'SA'],
+    'BAN v ZIM': ['BAN', 'ZIM'],
+    'ENG v INDIA': ['ENG', 'INDIA'],
+    'ENG v IRE': ['ENG', 'IRE'],
+    'ENG v NZ': ['ENG', 'NZ'],
+    'ENG v PAK': ['ENG', 'PAK'],
+    'ENG v SL': ['ENG', 'SL'],
+    'INDIA v NED': ['INDIA', 'NED'],
+    'INDIA v PAK': ['INDIA', 'PAK'],
+    'INDIA v SA': ['INDIA', 'SA'],
+    'INDIA v ZIM': ['INDIA', 'ZIM'],
+    'IRE v NZ': ['IRE', 'NZ'],
+    'IRE v SCOT': ['IRE', 'SCOT'],
+    'IRE v SL': ['IRE', 'SL'],
+    'IRE v WI': ['IRE', 'WI'],
+    'IRE v ZIM': ['IRE', 'ZIM'],
+    'NAM v NED': ['NAM', 'NED'],
+    'NAM v SL': ['NAM', 'SL'],
+    'NAM v UAE': ['NAM', 'UAE'],
+    'NED v PAK': ['NED', 'PAK'],
+    'NED v SA': ['NED', 'SA'],
+    'NED v SL': ['NED', 'SL'],
+    'NED v UAE': ['NED', 'UAE'],
+    'NED v ZIM': ['NED', 'ZIM'],
+    'NZ v PAK': ['NZ', 'PAK'],
+    'NZ v SL': ['NZ', 'SL'],
+    'PAK v SA': ['PAK', 'SA'],
+    'PAK v ZIM': ['PAK', 'ZIM'],
+    'SA v ZIM': ['SA', 'ZIM'],
+    'SCOT v WI': ['SCOT', 'WI'],
+    'SCOT v ZIM': ['SCOT', 'ZIM'],
+    'SL v UAE': ['SL', 'UAE'],
+    'WI v ZIM': ['WI', 'ZIM'],
+}
+
+
+
+all_stages = {
+    'all' : ['AFG', 'AUS', 'BAN', 'ENG', 'INDIA', 'IRE', 'NAM', 'NED', 'NZ', 'PAK', 'SA', 'SCOT', 'SL', 'UAE', 'WI', 'ZIM'],
+    'group' : ['IRE', 'NAM', 'NED', 'SCOT', 'SL', 'UAE', 'WI', 'ZIM'],
+    'super 12' : ['AFG', 'AUS', 'BAN', 'ENG', 'INDIA', 'IRE', 'NED', 'NZ', 'PAK', 'SA', 'SL', 'ZIM'],
+    'semi' : ['ENG', 'INDIA', 'NZ', 'PAK'],
+    'final' : ['ENG', 'PAK'],
+}
+
+
+
 # App layout
-app.layout = html.Div([
-    html.Div(children = [html.H1('Cricket Analysis'),
-                         html.H3('T20 World cup, 2022'),
-                         html.H5('Developer: Tushar Siddik')
-                        ], 
-            style = {'text-align' : 'center'}),
+app.layout = html.Div(
+    style = {'max-width' : '600px', 'text-align' : 'center', 'align-items' : 'center', 'padding' : '10px',  'background-color': '#f8f9fa'},
+    children = [
+    html.Div(
+        children = [
+            html.H1('Cricket Analysis'),
+            html.H3('T20 World cup, 2022'),
+            html.H5('Developer: Tushar Siddik')
+        ], 
+        style = {'text-align' : 'center'}),
     
-    html.Div(children = [html.H2('Main Data Set'),
-                        dash_table.DataTable(data=df.loc[:, : 'runs'].to_dict('records'), page_size= 10)
-                        ]),
+    html.Div(
+        children = [
+            html.H2('Main Data Set'),
+            dash_table.DataTable(
+                data=df.loc[:, : 'runs'].to_dict('records'), 
+                page_size= 10
+            )
+        ]),
     
-    html.Div(children = [html.Hr(),
-                        html.H2('Analysis', style = {'text-align' : 'center'}),
-                        html.Hr(),
-                        ]),
+    html.Div(
+        children = [
+            html.Hr(),
+            html.H2('Analysis', style = {'text-align' : 'center'}),
+            html.Hr(),
+        ]),
     
+    
+    # html.Hr(),
+    # over by over Run timeline
+    html.Div(
+        style={"flex": 1, "padding": "10px"},
+        children = [
+            html.H3('Over by Over Run Timeline'),
+            html.H4('Match'),
+            dcc.Dropdown(
+                list(all_matches.keys()),
+                'BAN v ZIM',
+                id = 'match_name',
+                # inline=True
+            ),
+                
+            html.Br(),
+            html.H4('Innings'),
+                
+            dcc.RadioItems(
+                id = 'match_innings', 
+                value= 'BAN', 
+                inline = True
+            ),
+                
+            html.Br(),
+            dash_table.DataTable(
+                id = 'team_run_timeline_over', 
+                page_size= 10
+            ),
+            dcc.Graph(
+                figure={}, 
+                id='team_run_timeline_over_graph_bar'
+            ),
+            dcc.Graph(
+                figure={}, 
+                id='team_run_timeline_over_graph_line'
+            ),  
+            html.Hr(), 
+    ]),
+
+
     # Game stage options
-    html.Div(children = [html.H3('Stage: '),
-                        dcc.RadioItems(options=[
-                            {'label': 'Whole worldcup', 'value': 'all'},
-                            {'label': 'Group Stage', 'value': 'group'},
-                            {'label': 'Round of Super 12', 'value': 'super 12'},
-                            {'label': 'Semi-final', 'value': 'semi'},
-                            {'label': 'Final', 'value': 'Final'}], 
-                        value='all', 
-                        id='stage', 
-                        inline=True),
-                        ]),
+    html.Div(
+        children = [
+            html.H3('Stage: '),
+            dcc.Dropdown(
+                options = list(all_stages.keys()), 
+                value='all', 
+                id='stage', 
+                # inline=True
+            ),
+        ]),
     
     # information
-    html.Div(children = [html.H3('Info'),
-                         html.Div(id = 'info'),    
-    ]),
+    html.Div(
+        children = [
+            html.H3('Info'),
+            html.Div(id = 'info'),    
+        ]),
     html.Hr(),
     
-    # Run timeline
-    html.Div(style={"flex": 1, "padding": "10px"},
-             children = [html.H3('Run Timeline'),
-                        dcc.RadioItems(options=[
-                            {'label': 'Afghanistan', 'value': 'AFG'},
-                            {'label': 'Australia', 'value': 'AUS'},
-                            {'label': 'Bangladesh', 'value': 'BAN'},
-                            {'label': 'England', 'value': 'ENG'},
-                            {'label': 'India', 'value': 'INDIA'},
-                            {'label': 'Ireland', 'value': 'IRE'},
-                            {'label': 'Namibia', 'value': 'NAM'},
-                            {'label': 'Nederland', 'value': 'NED'},
-                            {'label': 'New Zealand', 'value': 'NZ'},
-                            {'label': 'Pakistan', 'value': 'PAK'},
-                            {'label': 'Scotland', 'value': 'SCOT'},
-                            {'label': 'South Africa', 'value': 'SA'},
-                            {'label': 'Sri Lanka', 'value': 'SL'},
-                            {'label': 'UAE', 'value': 'UAE'},
-                            {'label': 'West Indies', 'value': 'WI'},
-                            {'label': 'Zimbabwe', 'value': 'ZIM'},
-                        ], value='BAN', id='team', inline=True),
-                        dash_table.DataTable(id = 'team_run_timeline', page_size= 10),
-                        dcc.Graph(figure={}, id='team_run_timeline_graph'),  
-                        html.Hr(), 
-    ]),
+    # match by match Run timeline
+    html.Div(
+        # style={"flex": 1, "padding": "10px"},
+        children = [
+            html.H3('Match by Match Run Timeline'),
+            dcc.RadioItems(
+                id = 'team', 
+                value= 'BAN', 
+                inline = True
+            ),
+            
+            dash_table.DataTable(
+                id = 'team_run_timeline', 
+                page_size= 10
+            ),
+            dcc.Graph(
+                figure={}, 
+                id='team_run_timeline_graph'
+            ),  
+            html.Hr(), 
+        ]),
+
+
+    
+    
+
     
     
     # Run analysis
@@ -470,6 +583,142 @@ app.layout = html.Div([
 # callback
 # callback
 
+
+# over by over run timeline
+@callback(
+    Output('match_innings', 'options'),
+    Input('match_name', 'value')
+)
+def get_info(match):
+    return [{'label' : i, 'value' : i} for i in all_matches[match]]
+    # return all_matches[match]
+
+@callback(
+    Output('match_innings', 'value'),
+    Input('match_innings', 'options')
+)
+def get_info(innings):
+    return innings[0]['value']
+
+
+@app.callback(
+    Output('team_run_timeline_over', 'data'),
+    Input('match_name', 'value'),
+    Input('match_innings', 'value')
+)
+def get_info(match, team):
+    game =  Cricket(df, 'all')
+    return game.team_run_timeline_over(match, team).to_dict('records')
+
+@app.callback(
+    Output('team_run_timeline_over_graph_bar', 'figure'),
+    Input('match_name', 'value'),
+    Input('match_innings', 'value')
+)
+def get_info(match, team):
+    df1 = Cricket(df, 'all')
+    game = df1.team_run_timeline_over(match, team)
+    wicket = game[game['Wicket'] != 0]
+    # fig = px.scatter(data_frame= wicket, x = 'Over', y = 'Wicket')
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x = game['Over'],
+            y = game['Run'],
+            text = game['Run'],
+            hovertext = [f'Over: {o}<br>Run: {r}' for o, r in zip(game['Over'], game['Run'])],
+            textposition= 'outside',
+            name= 'Run [Over]',
+        )
+    )
+    
+    fig.add_trace(
+        go.Scatter(
+            x = wicket['Over'],
+            y = wicket['Wicket'],
+            mode = 'markers',
+            hovertext = [f'Over: {o}<br>Wicket: {w}' for o, w in zip(wicket['Over'], wicket['Wicket'])],
+            name='Wicket',
+            marker = dict(color= 'red', size = 12),
+        )
+    )
+    
+    # fig.update_traces(
+    #     textposition='outside',  
+    #     # textfont=dict(color='white')
+    # )
+
+    fig.update_layout(
+        title = dict( text = f"Over by Over run and wicket<br>{match}: {team}", x=0.5),
+        xaxis = dict(title = 'Over'),
+        yaxis = dict(title = 'Run and Wicket')
+    )
+    return fig
+
+@app.callback(
+    Output('team_run_timeline_over_graph_line', 'figure'),
+    Input('match_name', 'value'),
+    Input('match_innings', 'value')
+)
+def get_info(match, team):
+    df1 = Cricket(df, 'all')
+    game = df1.team_run_timeline_over(match, team)
+    wicket = game[game['Wicket'] != 0]
+    # wicket['wicket_t'] = wicket['Wicket'].cumsum()
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x = game['Over'],
+            y = game['Total'],
+            mode = 'lines',
+            line = dict(width = 5),
+            hovertext = [f'Over: {o}<br>Run: {r}' for o, r in zip(game['Over'], game['Run'])],
+            name= 'Total Run [Over]',
+        )
+    )
+    
+    fig.add_trace(
+        go.Scatter(
+            x = wicket['Over'],
+            y = wicket['Total'],
+            # cliponaxis = game['Total'],
+            mode = 'markers',
+            marker = dict(color= 'red', size = 12),
+            hovertext = [f'Over: {o}<br>Wicket: {w}' for o, w in zip(wicket['Over'], wicket['Wicket'])],
+            name= 'Wicket [Over]',
+        )
+    )
+    
+    fig.update_layout(
+        title = dict( text = f"Over by Over total run and wicket<br>{match}: {team}", x=0.5),
+        xaxis = dict(title = 'Over'),
+        yaxis = dict(title = 'Total run and Wicket')
+    )
+    return fig
+
+
+
+
+
+
+@callback(
+    Output('team', 'options'),
+    Input('stage', 'value')
+)
+def get_info(stage):
+    return [{'label' : i, 'value' : i} for i in all_stages[stage]]
+    # return all_matches[match]
+
+@callback(
+    Output('team', 'value'),
+    Input('team', 'options')
+)
+def get_info(team):
+    return team[2]['value']
+
+
+
+
 # information
 @app.callback(
     Output('info', 'children'),
@@ -479,7 +728,8 @@ def get_info(stage):
     return Cricket(df, stage).info()
 
 
-# run timeline
+
+# match by match run timeline
 @app.callback(
     Output('team_run_timeline', 'data'),
     Input('stage', 'value'),
@@ -497,6 +747,11 @@ def get_info(stage, team):
 def get_info(stage, team):
     game =  Cricket(df, stage).team_run_timeline(team)
     fig = px.line(game, x = 'match_name', y = 'Run', markers = True)
+    
+    fig.update_traces(
+    line=dict(width=5), 
+    marker=dict(size=10)
+    )
     fig.update_layout(
         title = dict( text = f"Run Timeline of {team}", x=0.5),
         xaxis = dict(title = 'Match'),
