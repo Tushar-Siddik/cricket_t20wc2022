@@ -80,7 +80,7 @@ app.layout = html.Div(
         children = [
             html.H1('Cricket Analysis'),
             html.H3('T20 World cup, 2022'),
-            html.H5('Developer: Tushar Siddik')
+            html.H5('Developer: Md. Siddiqur Rahman')
         ], 
         style = {'text-align' : 'center'}),
     
